@@ -1,28 +1,21 @@
 package com.example.todoapp_firebase.ui.task
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.todoapp_firebase.ui.components.CustomTextField
 
-/** Gemini início
+/**
+ * AddTaskDialog melhorado com UI mais moderna
  *
- * Prompt: Crie um Composable AddTaskDialog que exibe um AlertDialog.
- * Ele deve receber onDismiss (Lambda) e onConfirm (Lambda que recebe título e descrição).
- * Use dois CustomTextFields para título e descrição.
- * O botão "Adicionar" deve estar desabilitado se o título estiver vazio.
- *
+ * Melhorias:
+ * 1. Design mais limpo e espaçado
+ * 2. Botões com cores mais definidas
+ * 3. Validação visual melhorada
  */
 @Composable
 fun AddTaskDialog(
@@ -34,35 +27,61 @@ fun AddTaskDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Nova Tarefa") },
+        title = {
+            Text(
+                text = "Nova Tarefa",
+                fontWeight = FontWeight.SemiBold
+            )
+        },
         text = {
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 CustomTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = "Título"
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 CustomTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = "Descrição (Opcional)"
                 )
+
+                if (title.isBlank() && title.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "O título não pode estar vazio",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(title, description) },
-                enabled = title.isNotBlank()
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onConfirm(title.trim(), description.trim())
+                    }
+                },
+                enabled = title.isNotBlank(),
+                shape = RoundedCornerShape(8.dp)
             ) {
                 Text(text = "Adicionar")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(8.dp)
+            ) {
                 Text(text = "Cancelar")
             }
-        }
+        },
+        shape = RoundedCornerShape(16.dp)
     )
 }
-/** Gemini final */

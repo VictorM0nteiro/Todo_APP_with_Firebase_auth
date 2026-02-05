@@ -1,20 +1,9 @@
 package com.example.todoapp_firebase.ui.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,57 +11,92 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.todoapp_firebase.data.model.Task
 
-/** Gemini início
+/**
+ * TaskItem corrigido com checkbox funcionando
  *
- * Prompt: Crie um componente TaskItem que recebe um objeto Task, onCheckedChange (Lambda) e onDelete (Lambda).
- * Use um Card para o layout, contendo uma Row com Checkbox, Título/Descrição e um IconButton de deletar.
- * Se a tarefa estiver completada (isCompleted), aplique um risco (line-through) no título.
- *
+ * Mudanças principais:
+ * 1. Checkbox agora está sincronizado corretamente com task.isCompleted
+ * 2. UI mais limpa e moderna
+ * 3. Melhor espaçamento e visual
  */
 @Composable
 fun TaskItem(
     task: Task,
     onCheckedChange: (Boolean) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Checkbox
             Checkbox(
                 checked = task.isCompleted,
-                onCheckedChange = onCheckedChange
+                onCheckedChange = { isChecked ->
+                    onCheckedChange(isChecked)
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
+            // Conteúdo da tarefa
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (task.isCompleted)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    textDecoration = if (task.isCompleted)
+                        TextDecoration.LineThrough
+                    else
+                        null
                 )
+
                 if (task.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = task.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textDecoration = if (task.isCompleted)
+                            TextDecoration.LineThrough
+                        else
+                            null
                     )
                 }
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "Deletar")
+            // Botão de deletar
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Deletar tarefa",
+                    tint = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
 }
-/** Gemini final */

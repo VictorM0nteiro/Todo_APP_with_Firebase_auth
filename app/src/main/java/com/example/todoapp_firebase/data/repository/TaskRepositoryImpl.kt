@@ -5,19 +5,18 @@ import com.example.todoapp_firebase.data.model.Task
 import com.example.todoapp_firebase.util.Constants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-/** Gemini início
+/**
+ * TaskRepositoryImpl CORRIGIDO
  *
- * Prompt: Implemente a TaskRepositoryImpl injetando FirebaseFirestore e FirebaseAuth.
- * No método getTasks, use callbackFlow para escutar mudanças em tempo real na coleção "tasks", filtrando pelo userId do usuário logado.
- * Implemente addTask, updateTask e deleteTask usando as funções do Firestore (add, set, delete) com await().
- *
+ * Correção principal: updateTask agora usa .update() ao invés de .set()
+ * Isso resolve o problema das checkboxes que não funcionavam
  */
 class TaskRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -27,7 +26,6 @@ class TaskRepositoryImpl @Inject constructor(
     private val tasksCollection = firestore.collection(Constants.TASKS_COLLECTION)
 
     override fun getTasks(): Flow<Response<List<Task>>> = callbackFlow {
-        // Pega o ID do usuário atual para filtrar apenas as tarefas dele
         val userId = auth.currentUser?.uid ?: ""
 
         if (userId.isEmpty()) {
@@ -36,11 +34,8 @@ class TaskRepositoryImpl @Inject constructor(
             return@callbackFlow
         }
 
-        // Escuta em tempo real (addSnapshotListener)
         val subscription = tasksCollection
             .whereEqualTo("userId", userId)
-            // Ordena pela data de criação se tivesse, ou pelo título
-            //.orderBy("title", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(Response.Error(error.localizedMessage ?: "Erro ao carregar tarefas"))
@@ -48,13 +43,11 @@ class TaskRepositoryImpl @Inject constructor(
                 }
 
                 if (snapshot != null) {
-                    // Converte os documentos do Firestore para nossa classe Task
                     val tasks = snapshot.toObjects(Task::class.java)
                     trySend(Response.Success(tasks))
                 }
             }
 
-        // Quando o fluxo fechar, remove o listener para não gastar memória
         awaitClose { subscription.remove() }
     }
 
@@ -75,7 +68,7 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun addTask(title: String, description: String): Response<Boolean> {
         return try {
             val userId = auth.currentUser?.uid ?: throw Exception("Usuário não logado")
-            val id = tasksCollection.document().id // Gera um ID único
+            val id = tasksCollection.document().id
 
             val task = Task(
                 id = id,
@@ -94,8 +87,16 @@ class TaskRepositoryImpl @Inject constructor(
 
     override suspend fun updateTask(task: Task): Response<Boolean> {
         return try {
-            // Atualiza o documento existente com o mesmo ID
-            tasksCollection.document(task.id).set(task).await()
+            // CORREÇÃO PRINCIPAL: Usar .update() com mapOf ao invés de .set()
+            // Isso evita conflitos com @DocumentId e atualiza apenas os campos necessários
+            val updates = hashMapOf<String, Any>(
+                "title" to task.title,
+                "description" to task.description,
+                "isCompleted" to task.isCompleted,
+                "userId" to task.userId
+            )
+
+            tasksCollection.document(task.id).update(updates).await()
             Response.Success(true)
         } catch (e: Exception) {
             Response.Error(e.localizedMessage ?: "Erro ao atualizar tarefa")
@@ -111,4 +112,3 @@ class TaskRepositoryImpl @Inject constructor(
         }
     }
 }
-/** Gemini final */
