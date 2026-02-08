@@ -55,6 +55,7 @@ class TaskViewModel @Inject constructor(
     }
 
     fun onTaskCheckedChanged(task: Task, isChecked: Boolean) = viewModelScope.launch {
+        println("TASK ID = ${task.id}")
         repo.updateTask(task.copy(isCompleted = isChecked))
     }
 
