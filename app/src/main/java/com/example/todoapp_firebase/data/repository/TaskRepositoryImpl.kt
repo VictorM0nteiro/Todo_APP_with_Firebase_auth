@@ -37,13 +37,24 @@ class TaskRepositoryImpl @Inject constructor(
         val subscription = tasksCollection
             .whereEqualTo("userId", userId)
             .addSnapshotListener { snapshot, error ->
+
                 if (error != null) {
                     trySend(Response.Error(error.localizedMessage ?: "Erro ao carregar tarefas"))
                     return@addSnapshotListener
                 }
 
                 if (snapshot != null) {
-                    val tasks = snapshot.toObjects(Task::class.java)
+
+                    val tasks = snapshot.documents.map { doc ->
+                        Task(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            description = doc.getString("description") ?: "",
+                            isCompleted = doc.getBoolean("isCompleted") ?: false,
+                            userId = doc.getString("userId") ?: ""
+                        )
+                    }
+
                     trySend(Response.Success(tasks))
                 }
             }
@@ -85,20 +96,35 @@ class TaskRepositoryImpl @Inject constructor(
         }
     }
 
+//    override suspend fun updateTask(task: Task): Response<Boolean> {
+//        return try {
+//            // CORREÇÃO PRINCIPAL: Usar .update() com mapOf ao invés de .set()
+//            // Isso evita conflitos com @DocumentId e atualiza apenas os campos necessários
+//            val updates = hashMapOf<String, Any>(
+//                "title" to task.title,
+//                "description" to task.description,
+//                "isCompleted" to task.isCompleted,
+//                "userId" to task.userId
+//            )
+//
+//            tasksCollection.document(task.id).update(updates).await()
+//            Response.Success(true)
+//        } catch (e: Exception) {
+//            Response.Error(e.localizedMessage ?: "Erro ao atualizar tarefa")
+//        }
+//    }
+
     override suspend fun updateTask(task: Task): Response<Boolean> {
         return try {
-            // CORREÇÃO PRINCIPAL: Usar .update() com mapOf ao invés de .set()
-            // Isso evita conflitos com @DocumentId e atualiza apenas os campos necessários
-            val updates = hashMapOf<String, Any>(
-                "title" to task.title,
-                "description" to task.description,
-                "isCompleted" to task.isCompleted,
-                "userId" to task.userId
-            )
+            tasksCollection
+                .document(task.id)
+                .update("isCompleted", task.isCompleted)
+                .await()
 
-            tasksCollection.document(task.id).update(updates).await()
+            println("FIRESTORE UPDATED: ${task.id} -> ${task.isCompleted}")
             Response.Success(true)
         } catch (e: Exception) {
+            e.printStackTrace()
             Response.Error(e.localizedMessage ?: "Erro ao atualizar tarefa")
         }
     }
