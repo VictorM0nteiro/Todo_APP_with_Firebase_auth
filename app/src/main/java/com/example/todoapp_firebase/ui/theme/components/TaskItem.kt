@@ -3,6 +3,7 @@ package com.example.todoapp_firebase.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,17 +13,19 @@ import androidx.compose.ui.unit.dp
 import com.example.todoapp_firebase.data.model.Task
 
 /**
- * TaskItem corrigido com checkbox funcionando
+ * TaskItem corrigido com checkbox funcionando e edição
  *
  * Mudanças principais:
  * 1. Checkbox agora está sincronizado corretamente com task.isCompleted
  * 2. UI mais limpa e moderna
  * 3. Melhor espaçamento e visual
+ * 4. Botão de edição adicionado
  */
 @Composable
 fun TaskItem(
     task: Task,
     onCheckedChange: (Boolean) -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -84,6 +87,18 @@ fun TaskItem(
                             null
                     )
                 }
+            }
+
+            // Botão de editar
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Editar tarefa",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
 
             // Botão de deletar

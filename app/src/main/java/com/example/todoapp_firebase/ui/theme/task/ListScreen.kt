@@ -16,9 +16,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.todoapp_firebase.data.Response
+import com.example.todoapp_firebase.data.model.Task
 import com.example.todoapp_firebase.ui.auth.AuthViewModel
 import com.example.todoapp_firebase.ui.components.TaskItem
 import com.example.todoapp_firebase.ui.navigation.Routes
+
 
 /**
  * ListScreen melhorada com UI mais moderna
@@ -37,16 +39,35 @@ fun ListScreen(
     authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val tasksState = viewModel.tasks.collectAsState()
-    var showDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var taskToEdit by remember { mutableStateOf<Task?>(null) }
 
-    if (showDialog) {
+    if (showAddDialog) {
         AddTaskDialog(
-            onDismiss = { showDialog = false },
+            onDismiss = { showAddDialog = false },
             onConfirm = { title, desc ->
                 viewModel.addTask(title, desc)
-                showDialog = false
+                showAddDialog = false
             }
         )
+    }
+
+    taskToEdit?.let { task ->
+        if (showEditDialog) {
+            EditTaskDialog(
+                task = task,
+                onDismiss = {
+                    showEditDialog = false
+                    taskToEdit = null
+                },
+                onConfirm = { title, desc ->
+                    viewModel.editTask(task, title, desc)
+                    showEditDialog = false
+                    taskToEdit = null
+                }
+            )
+        }
     }
 
     Scaffold(
@@ -80,7 +101,7 @@ fun ListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showDialog = true },
+                onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -153,6 +174,10 @@ fun ListScreen(
                                     task = task,
                                     onCheckedChange = { isChecked ->
                                         viewModel.onTaskCheckedChanged(task, isChecked)
+                                    },
+                                    onEdit = {
+                                        taskToEdit = task
+                                        showEditDialog = true
                                     },
                                     onDelete = {
                                         viewModel.deleteTask(task.id)

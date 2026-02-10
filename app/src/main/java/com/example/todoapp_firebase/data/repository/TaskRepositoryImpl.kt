@@ -116,12 +116,19 @@ class TaskRepositoryImpl @Inject constructor(
 
     override suspend fun updateTask(task: Task): Response<Boolean> {
         return try {
+            // Atualiza todos os campos editáveis da tarefa
+            val updates = hashMapOf<String, Any>(
+                "title" to task.title,
+                "description" to task.description,
+                "isCompleted" to task.isCompleted
+            )
+
             tasksCollection
                 .document(task.id)
-                .update("isCompleted", task.isCompleted)
+                .update(updates)
                 .await()
 
-            println("FIRESTORE UPDATED: ${task.id} -> ${task.isCompleted}")
+            println("FIRESTORE UPDATED: ${task.id} -> title: ${task.title}, desc: ${task.description}, completed: ${task.isCompleted}")
             Response.Success(true)
         } catch (e: Exception) {
             e.printStackTrace()
